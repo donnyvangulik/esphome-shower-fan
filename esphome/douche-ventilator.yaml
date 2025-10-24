@@ -1,0 +1,165 @@
+
+substitutions:
+  device_name: douche-ventilator
+  device_name_friendly: Douche Ventilator Benjamin
+  led_gpio: GPIO5
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${device_name_friendly}
+
+esp32:
+  board: wt32-eth01
+  framework:
+    type: arduino
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Douche-Afzuiging-${device_name}"
+    password: !secret ap_password
+
+captive_portal:
+
+i2c:
+  sda: GPIO33
+  scl: GPIO32
+  scan: true
+
+switch:
+  - platform: gpio
+    pin: GPIO4
+    name: "Douche Ventilatie Benjamin"
+    icon: mdi:fan
+    id: bathfan1
+
+  - platform: template
+    name: "Douche Fan Override"
+    id: manual_override
+    icon: mdi:hand
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      - logger.log: "Manual override enabled"
+      - switch.turn_on: bathfan1
+      - script.execute: auto_reset_override
+    on_turn_off:
+      - logger.log: "Manual override disabled"
+
+sensor:
+  - platform: sht3xd
+    temperature:
+      name: "Douche Benjamin Temperatuur"
+    humidity:
+      id: hum_benjamin
+      name: "Douche Benjamin Luchtvochtigheid"
+    address: 0x44
+    update_interval: 30s
+
+  # Short-term moving average (20 minutes)
+  - platform: copy
+    source_id: hum_benjamin
+    id: hum_short_avg
+    name: "Humidity Short-Term Avg"
+    internal: true
+    filters:
+      - sliding_window_moving_average:
+          window_size: 40      # 40 samples * 30s = 20 minutes
+          send_every: 1
+          send_first_at: 1
+
+  # Long-term moving average (48 hours)
+  - platform: copy
+    source_id: hum_benjamin
+    id: hum_long_avg
+    name: "Humidity Long-Term Avg"
+    internal: true
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5760    # 5760 * 30s = 48 hours
+          send_every: 40       # Update every 20 minutes
+
+  # Delta between short- and long-term averages
+  - platform: template
+    name: "Humidity Delta"
+    id: hum_delta
+    unit_of_measurement: "%"
+    icon: mdi:delta
+    accuracy_decimals: 2
+    lambda: |-
+      if (id(hum_long_avg).state < 10.0) {
+        return 0.0;
+      }
+      return id(hum_short_avg).state - id(hum_long_avg).state;
+
+binary_sensor:
+  - platform: template
+    name: "Shower Humidity Trigger"
+    id: hum_rise_sensor
+    lambda: |-
+      static bool on = false;
+      const float DELTA_ON  = 5.0;   // start when short avg rises > baseline by this much
+      const float DELTA_OFF = 1.6;   // stop when delta falls back near baseline
+      const float ABS_ON    = 82.0;  // hard start if humidity is very high
+
+      float d = id(hum_delta).state;
+      float h = id(hum_benjamin).state;
+
+      if (!on) {
+        on = (d > DELTA_ON) || (h >= ABS_ON);
+      } else {
+        // turn OFF purely on delta (no absolute humidity requirement)
+        on = !(d < DELTA_OFF);
+      }
+      return on;
+    filters:
+      - delayed_off: 5min   # need 5 min of low delta before we consider it "off"
+    on_press:
+      - if:
+          condition:
+            switch.is_off: manual_override
+          then:
+            - logger.log: "Shower detected – turning on fan"
+            - switch.turn_on: bathfan1
+            - script.execute: fan_max_runtime
+    on_release:
+      - script.stop: fan_max_runtime
+      - if:
+          condition:
+            and:
+              - switch.is_on: bathfan1
+              - switch.is_off: manual_override
+          then:
+            - logger.log: "Humidity back to baseline – waiting run-on then switching off"
+            - delay: 15min
+            - switch.turn_off: bathfan1
+
+script:
+  - id: fan_max_runtime
+    mode: restart
+    then:
+      - delay: 90min
+      - if:
+          condition:
+            - switch.is_off: manual_override
+          then:
+            - logger.log: "Max runtime reached – turning off fan"
+            - switch.turn_off: bathfan1
+
+  - id: auto_reset_override
+    mode: restart
+    then:
+      - delay: 1h
+      - logger.log: "Auto-resetting manual override after 1 hour"
+      - switch.turn_off: manual_override
