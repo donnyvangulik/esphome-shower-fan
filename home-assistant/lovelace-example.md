@@ -5,11 +5,11 @@
 type: entities
 title: Douche Ventilator
 entities:
-  - entity: switch.douche_ventilatie_benjamin
+  - entity: switch.shower_fan
     name: Ventilator
-  - entity: switch.douche_fan_override
+  - entity: switch.shower_fan_override
     name: Handmatige Override
-  - entity: sensor.douche_benjamin_luchtvochtigheid
+  - entity: sensor.shower_humidity
     name: Luchtvochtigheid
   - entity: sensor.humidity_delta
     name: Humidity Delta
