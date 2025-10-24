@@ -54,9 +54,9 @@ Files are in `esphome/`. Copy `secrets.yaml.example` to `secrets.yaml` and fill 
 
 ### Entities exposed
 
-- `switch.douche_ventilatie_benjamin` — the fan
+- `switch.douche_ventilatior` — the fan
 - `switch.douche_fan_override` — manual override
-- `sensor.douche_benjamin_luchtvochtigheid` — humidity
+- `sensor.douche_luchtvochtigheid` — humidity
 - `sensor.humidity_delta` — short‑term vs long‑term delta (internal by default)
 
 ---
