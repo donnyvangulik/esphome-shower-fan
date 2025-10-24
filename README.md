@@ -54,9 +54,9 @@ Files are in `esphome/`. Copy `secrets.yaml.example` to `secrets.yaml` and fill 
 
 ### Entities exposed
 
-- `switch.douche_ventilatior` — the fan
-- `switch.douche_fan_override` — manual override
-- `sensor.douche_luchtvochtigheid` — humidity
+- `switch.shower_fan` — the fan
+- `switch.shower_fan_override` — manual override
+- `sensor.shower_humidity` — humidity
 - `sensor.humidity_delta` — short‑term vs long‑term delta (internal by default)
 
 ---
@@ -74,7 +74,7 @@ This project is built and tested for **230 VAC** fans. Use DC only if you know
 
 ## Tuning
 
-In `douche-ventilator.yaml`, tweak these if needed:
+In `shower-fan.yaml`, tweak these if needed:
 
 - `DELTA_ON` — humidity spike above baseline to start (default 5.0)
 - `ABS_ON` — hard start if absolute humidity is very high (default 82%)
@@ -87,9 +87,9 @@ In `douche-ventilator.yaml`, tweak these if needed:
 ## Repository layout
 
 ```
-douche-ventilator/
+shower-fan/
 ├─ esphome/
-│  ├─ douche-ventilator.yaml
+│  ├─ shower-fan.yaml
 │  └─ secrets.yaml.example
 ├─ home-assistant/
 │  └─ lovelace-example.md
@@ -100,7 +100,7 @@ douche-ventilator/
 ## Getting started
 
 1. Copy `esphome/secrets.yaml.example` → `esphome/secrets.yaml` and edit values.
-2. Open **ESPHome**, add `esphome/douche-ventilator.yaml`, and install to your device.
+2. Open **ESPHome**, add `esphome/shower-fan.yaml`, and install to your device.
 3. Wire the SHT31 and fan as above. Power up. The device exposes an AP for first-time Wi‑Fi if needed.
 4. Add the device to **Home Assistant** via ESPHome integration.
 5. Shower test: watch `Humidity Delta` rise; the fan should start, then stop after the spike subsides and the run‑on completes.
