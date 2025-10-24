@@ -1,7 +1,7 @@
 
 substitutions:
-  device_name: douche-ventilator
-  device_name_friendly: Douche Ventilator Benjamin
+  device_name: shower-ventilator
+  device_name_friendly: Shower Ventilator
   led_gpio: GPIO5
 
 esphome:
@@ -27,7 +27,7 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   ap:
-    ssid: "Douche-Afzuiging-${device_name}"
+    ssid: "Shower-Fan-${device_name}"
     password: !secret ap_password
 
 captive_portal:
@@ -40,12 +40,12 @@ i2c:
 switch:
   - platform: gpio
     pin: GPIO4
-    name: "Douche Ventilatie Benjamin"
+    name: "Shower Fan"
     icon: mdi:fan
     id: bathfan1
 
   - platform: template
-    name: "Douche Fan Override"
+    name: "Shower Fan Override"
     id: manual_override
     icon: mdi:hand
     optimistic: true
@@ -60,16 +60,16 @@ switch:
 sensor:
   - platform: sht3xd
     temperature:
-      name: "Douche Benjamin Temperatuur"
+      name: "Shower Temperature"
     humidity:
-      id: hum_benjamin
-      name: "Douche Benjamin Luchtvochtigheid"
+      id: hum_shower
+      name: "Shower Humidity"
     address: 0x44
     update_interval: 30s
 
   # Short-term moving average (20 minutes)
   - platform: copy
-    source_id: hum_benjamin
+    source_id: hum_shower
     id: hum_short_avg
     name: "Humidity Short-Term Avg"
     internal: true
@@ -81,7 +81,7 @@ sensor:
 
   # Long-term moving average (48 hours)
   - platform: copy
-    source_id: hum_benjamin
+    source_id: hum_shower
     id: hum_long_avg
     name: "Humidity Long-Term Avg"
     internal: true
@@ -114,7 +114,7 @@ binary_sensor:
       const float ABS_ON    = 82.0;  // hard start if humidity is very high
 
       float d = id(hum_delta).state;
-      float h = id(hum_benjamin).state;
+      float h = id(hum_shower).state;
 
       if (!on) {
         on = (d > DELTA_ON) || (h >= ABS_ON);
